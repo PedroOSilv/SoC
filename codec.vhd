@@ -17,28 +17,56 @@ entity codec is
 end entity;
 
 architecture behavioral of codec is
-	file firmware: text;
+	file input: text open read_mode is "input.txt";
+	file output: text open write_mode is "output.txt";
+	signal pulse_valid: std_logic := '0';
 begin
 
-	read_data: process is
-		variable instruction: line;
-		variable logvec: std_logic_vector(7 downto 0);
+	-- Input
+	process (interrupt) is
+		variable datum_vec: bit_vector(7 downto 0);
+		variable datum_str: line;
+		variable good: boolean;
 	begin
-		file_open(firmware, firmware_filename, read_mode);
-
-		while not endfile(firmware) loop
-			readline(firmware, instruction);
-			for i in logvec'range loop
-				if instruction(i) = '1' then
-					logvec(i) := '1';
-				elsif instruction(i) = '0' then
-					logvec(i) := '0';
+		if rising_edge(interrupt) and read_signal = '1' then
+			if endfile(input) then
+				codec_data_out <= "UUUUUUUU";
+			else
+				readline(input, datum_str);
+				read(datum_str, datum_vec, good);
+				if good then
+					codec_data_out <= to_stdlogicvector(datum_vec);
+					pulse_valid <= '1';
+				else
+					codec_data_out <= "XXXXXXXX";
 				end if;
-				codec_data_out <= logvec;
-			end loop;
-		end loop;
+			end if;
+		end if;
+	end process;
 
-		wait;
+	-- Output
+	process (interrupt)
+		variable datum_vec: bit_vector(7 downto 0);
+		variable datum_str: line;
+	begin
+		if rising_edge(interrupt) and write_signal = '1' then
+			datum_vec := to_bitvector(codec_data_in);
+			write(datum_str, datum_vec);
+			writeline(output, datum_str);
+			pulse_valid <= '1';
+		end if;
+	end process;
+
+	-- Pulse the signal `valid` without a clock
+	process
+	begin
+		while true loop
+			wait until pulse_valid = '1';
+			valid <= '1';
+			pulse_valid <= '0';
+			wait until pulse_valid = '0';
+			valid <= '0';
+		end loop;
 	end process;
 
 end architecture;
