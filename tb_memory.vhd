@@ -16,6 +16,7 @@ architecture tb of tb_memory is
 	signal data_addr: std_logic_vector(addr_width - 1 downto 0) := (others => '0');
 	signal data_in: std_logic_vector(2*data_width - 1 downto 0) := (others => '0');
 	signal data_out: std_logic_vector(4*data_width - 1 downto 0) := (others => '0');
+	signal halt : std_logic := '0';
 
 begin
 
@@ -33,36 +34,46 @@ begin
 		data_out => data_out
 	);
 
-	clock <= not clock after 1 ns;
+	clk: process is
+	begin
+		while halt = '0' loop
+			clock <= not clock;
+			wait on halt for 1 ns;
+		end loop;
+		wait;
+	end process;
 
 	stimulus: process is
 	begin
 		report "Test started";
 
+		wait until rising_edge(clock);
+
 		data_read <= '0';
 		data_write <= '1';
-		data_addr <= "0000000000000000";
-		data_in <=   "1111111111111111";
+		data_addr <= x"0000";
+		data_in <= x"89AB";
 
-		wait until falling_edge(clock);
+		wait until rising_edge(clock);
 
-		data_addr <= "0000000000000010";
-		data_in <=   "1010101010101010";
+		data_addr <= x"0002";
+		data_in <= x"CDEF";
 
 		wait until falling_edge(clock);
 
 		data_read <= '1';
 		data_write <= '0';
-		data_addr <= "0000000000000000";
+		data_addr <= x"0000";
 
 		wait until falling_edge(clock);
 
-		assert data_out = "11111111111111111010101010101010" report "Error";
+		assert data_out = x"89ABCDEF" report "Data read not the same as data written";
 
-		wait for 10 ns;
+		data_read <= '0';
 
-		assert false report "Test ended successfully" severity failure;
-
+		report "Test ended successfully";
+		halt <= '1';
+		wait;
 	end process;
 
 end architecture;

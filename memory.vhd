@@ -13,9 +13,9 @@ entity memory is
 		data_write: in std_logic; -- When '1', write data to memory
 		-- Data address given to memory
 		data_addr: in std_logic_vector(addr_width - 1 downto 0);
-		-- Data sent from memory when data_read = '1' and data_write = '0'
-		data_in: in std_logic_vector(2*data_width - 1 downto 0);
 		-- Data sent to memory when data_read = '0' and data_write = '1'
+		data_in: in std_logic_vector(2*data_width - 1 downto 0);
+		-- Data sent from memory when data_read = '1' and data_write = '0'
 		data_out: out std_logic_vector(4*data_width - 1 downto 0)
 	);
 end entity;
