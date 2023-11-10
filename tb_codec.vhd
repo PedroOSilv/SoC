@@ -26,6 +26,7 @@ architecture tb of tb_codec is
 
 	-- This test will copy the input to the output
 	stimulus: process is
+		variable lnum: natural := 0;
 	begin
 
 		while true loop
@@ -35,9 +36,10 @@ architecture tb of tb_codec is
 			interrupt <= '1', '0' after 1 ns;
 
 			wait until falling_edge(valid) or codec_data = "XXXXXXXX";
+			lnum := lnum + 1;
 
 			assert codec_data /= "XXXXXXXX"
-				report "Invalid data received from input";
+				report "Invalid data received from input (line " & natural'image(lnum) & ")";
 
 			if codec_data = "UUUUUUUU" then
 				report "End of input file";
