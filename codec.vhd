@@ -45,11 +45,11 @@ begin
 				read(datum_str, datum_vec, good);
 				if good then
 					codec_data_out <= to_stdlogicvector(datum_vec);
-					pulse_valid <= '1', '0' after 1 ns;
 				else
 					codec_data_out <= "XXXXXXXX";
 				end if;
 			end if;
+			pulse_valid <= '1', '0' after 1 ns;
 		-- Output
 		elsif read_signal = '0' and write_signal = '1' then
 			datum_vec := to_bitvector(codec_data_in);

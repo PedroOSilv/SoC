@@ -58,34 +58,112 @@ begin
 		case opcode is
 
 			when "0000" =>  -- hlt
+				wait until falling_edge(halt);
+				IP := (others => '0');
+				SP := (others => '0');
 
 			when "0001" =>  -- in
+				-- Read byte from input
+				codec_interrupt <= '1';
+				wait until falling_edge(clock);
+				codec_interrupt <= '0';
+				codec_read <= '1';
+				codec_write <= '0';
+				wait until falling_edge(codec_valid);
+
+				-- Push byte onto stack
+				mem_data_read <= '0';
+				mem_data_write <= '1';
+				mem_data_in <= slv(resize(unsigned(codec_data_out), data_width))
+				             & (data_width-1 downto 0 => '0');
+				mem_data_addr <= slv(SP);
+
+				SP := SP + 1;
+				IP := IP + 1;
 
 			when "0010" =>  -- out
+				-- Pop byte from stack
+				mem_data_read <= '1';
+				mem_data_write <= '0';
+				mem_data_addr <= slv(SP);
+
+				-- Write byte to output
+				codec_interrupt <= '1';
+				wait until falling_edge(clock);
+				codec_interrupt <= '0';
+				codec_read <= '0';
+				codec_write <= '1';
+				codec_data_in <= mem_data_out(4*data_width-1 downto 3*data_width);
+				wait until falling_edge(codec_valid);
+
+				SP := SP - 1;
+				IP := IP + 1;
 
 			when "0011" =>  -- puship
+				mem_data_read <= '0';
+				mem_data_write <= '1';
+				mem_data_in <= slv(IP);
+				mem_data_addr <= slv(SP);
+
+				SP := SP + 2;
+				IP := IP + 1;
 
 			when "0100" =>  -- push
+				mem_data_read <= '0';
+				mem_data_write <= '1';
+				mem_data_in <= slv(resize(unsigned(immediate), data_width))
+				             & (data_width-1 downto 0 => '0');
+				mem_data_addr <= slv(SP);
+
+				SP := SP + 1;
+				IP := IP + 1;
 
 			when "0101" =>  -- drop
+				SP := SP - 1;
+				IP := IP + 1;
 
 			when "0110" =>  -- dup
+				mem_data_read <= '1';
+				mem_data_write <= '0';
+				mem_data_addr <= slv(SP - 1);
+				wait until falling_edge(clock);
+				mem_data_read <= '0';
+				mem_data_write <= '1';
+				mem_data_addr <= slv(SP - 1);
+				mem_data_in <= mem_data_out(4*data_width - 1 downto 3*data_width)
+				             & mem_data_out(4*data_width - 1 downto 3*data_width);
+
+				SP := SP + 1;
+				IP := IP + 1;
 
 			when "1000" =>  -- add
+				IP := IP + 1;
 
 			when "1001" =>  -- sub
+				IP := IP + 1;
 
 			when "1010" =>  -- nand
+				IP := IP + 1;
 
 			when "1011" =>  -- slt
+				IP := IP + 1;
 
 			when "1100" =>  -- shl
+				IP := IP + 1;
 
 			when "1101" =>  -- shr
+				IP := IP + 1;
 
 			when "1110" =>  -- jeq
+				-- IP := ...
 
 			when "1111" =>  -- jmp
+				mem_data_read <= '1';
+				mem_data_write <= '0';
+				mem_data_addr <= slv(SP - 1);
+
+				SP := SP - 2;
+				IP := unsigned(mem_data_out(4*data_width - 1 downto 2*data_width));
 
 			when others =>
 				-- report "Illegal instruction (opcode '" & integer'image(to_integer(unsigned(opcode))) & "')";

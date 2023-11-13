@@ -28,6 +28,7 @@ architecture tb of tb_codec is
 	stimulus: process is
 		variable lnum: natural := 0;
 	begin
+		report "Test started";
 
 		while true loop
 			-- Read from input
@@ -35,7 +36,7 @@ architecture tb of tb_codec is
 			write_signal <= '0';
 			interrupt <= '1', '0' after 1 ns;
 
-			wait until falling_edge(valid) or codec_data = "XXXXXXXX";
+			wait until falling_edge(valid);
 			lnum := lnum + 1;
 
 			assert codec_data /= "XXXXXXXX"
@@ -43,6 +44,7 @@ architecture tb of tb_codec is
 
 			if codec_data = "UUUUUUUU" then
 				report "End of input file";
+				report "Test ended successfully";
 				exit;
 			end if;
 
