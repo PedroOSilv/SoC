@@ -43,24 +43,21 @@ end entity;
 
 architecture behavioral of cpu is
 
+	alias slv is std_logic_vector;
 	alias opcode: std_logic_vector(3 downto 0) is instruction_in(7 downto 4);
 	alias immediate: std_logic_vector(3 downto 0) is instruction_in(3 downto 0);
-
-	signal IP: unsigned(addr_width - 1 downto 0) := (others => '0');
-	signal SP: unsigned(addr_width - 1 downto 0) := (others => '0');
 
 begin
 
 	process
+		variable SP: unsigned(addr_width - 1 downto 0) := (others => '0');
+		variable IP: unsigned(addr_width - 1 downto 0) := (others => '0');
 	begin
 		wait until rising_edge(clock);
 
 		case opcode is
 
 			when "0000" =>  -- hlt
-				wait until falling_edge(halt);
-				IP <= (others => '0');
-				SP <= (others => '0');
 
 			when "0001" =>  -- in
 
@@ -69,14 +66,8 @@ begin
 			when "0011" =>  -- puship
 
 			when "0100" =>  -- push
-				mem_data_read <= '0';
-				mem_data_write <= '1';
-				mem_data_addr <= std_logic_vector(SP);
-				mem_data_in <= (7 downto 4 => '0') & immediate;
-				SP <= SP + 1;
 
 			when "0101" =>  -- drop
-				SP <= SP - 1;
 
 			when "0110" =>  -- dup
 
