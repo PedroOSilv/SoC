@@ -24,7 +24,7 @@ architecture tb of tb_codec is
 		codec_data_out => codec_data
 	);
 
-	-- This test will copy the input to the output
+	-- This test will copy the input to the output verbatim
 	stimulus: process is
 		variable lnum: natural := 0;
 	begin
@@ -39,12 +39,7 @@ architecture tb of tb_codec is
 			wait until falling_edge(valid);
 			lnum := lnum + 1;
 
-			assert codec_data /= "XXXXXXXX"
-				report "Invalid data received from input (line " & natural'image(lnum) & ")";
-
-			if codec_data = "UUUUUUUU" then
-				report "End of input file";
-				report "Test ended successfully";
+			if codec_data = "UUUUUUUU" then  -- End of input file
 				exit;
 			end if;
 
@@ -56,6 +51,7 @@ architecture tb of tb_codec is
 			wait until falling_edge(valid);
 		end loop;
 
+		report "Test ended successfully";
 		wait;
 	end process;
 

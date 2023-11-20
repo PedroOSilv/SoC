@@ -63,11 +63,13 @@ begin
 
 		data_read <= '1';
 		data_write <= '0';
-		data_addr <= x"0000";
+		data_addr <= x"0003";
 
 		wait until falling_edge(clock);
 
-		assert data_out = x"89ABCDEF" report "Data read not the same as data written";
+		assert data_out = x"CDEF89AB"
+			report "Data read not the same as data written"
+			severity failure;
 
 		data_read <= '0';
 

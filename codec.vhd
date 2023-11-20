@@ -27,9 +27,9 @@ begin
 	valid <= pulse_valid;
 
 	process
-
 		variable datum_vec: bit_vector(7 downto 0);
 		variable datum_str: line;
+		variable lnum: natural := 1;
 		variable good: boolean;
 
 	begin
@@ -43,11 +43,11 @@ begin
 			else
 				readline(input, datum_str);
 				read(datum_str, datum_vec, good);
-				if good then
-					codec_data_out <= to_stdlogicvector(datum_vec);
-				else
-					codec_data_out <= "XXXXXXXX";
-				end if;
+				assert good
+					report "Failed to read input at line " & natural'image(lnum)
+					severity failure;
+				lnum := lnum + 1;
+				codec_data_out <= to_stdlogicvector(datum_vec);
 			end if;
 			pulse_valid <= '1', '0' after 1 ns;
 		-- Output

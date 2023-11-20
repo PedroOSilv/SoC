@@ -23,11 +23,11 @@ end entity;
 architecture ram of memory is
 
 	subtype mem_row is std_logic_vector(data_width-1 downto 0);
-	type mem_array is array (natural range<>) of mem_row;
+	type mem_array is array (integer range<>) of mem_row;
 
 	-- -3 accomodates for overrun if first byte is read
 	-- +1 accomodates for overrun if last byte is written to
-	signal mem: mem_array(-3 to 2**addr_width -1 +1) := (others => (-3 to -1 => 'U', others => '0'));
+	signal mem: mem_array(-3 to 2**addr_width -1 +1) := (others => (others => '0'));
 	signal data_addr_int: natural;
 begin
 
