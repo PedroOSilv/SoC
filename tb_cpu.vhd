@@ -9,7 +9,7 @@ architecture tb of tb_cpu is
 	constant data_width : natural := 8;
 
 	signal clock: std_logic := '0';
-	signal halt: std_logic := '0';
+	signal end_test: std_logic := '0';
 
 	signal instruction_in: std_logic_vector(data_width - 1 downto 0);
 	signal instruction_addr: std_logic_vector(addr_width - 1 downto 0);
@@ -36,7 +36,7 @@ begin
 	)
 	port map (
 		clock => clock,
-		halt => halt,
+		halt => end_test,
 		instruction_in => instruction_in,
 		instruction_addr => instruction_addr,
 		mem_data_read => mem_data_read,
@@ -54,21 +54,21 @@ begin
 
 	clk: process is
 	begin
-		while halt = '0' loop
+		while end_test = '0' loop
 			clock <= not clock;
-			wait on halt for 1 ns;
+			wait on end_test for 500 ps;
 		end loop;
 		wait;
 	end process;
 
-	stimulus: process is
+	ctl: process is
 	begin
 		report "Test started";
 
 		-- TODO test
 
+		end_test <= '1';
 		report "Test ended successfully";
-		halt <= '1';
 		wait;
 	end process;
 

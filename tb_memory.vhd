@@ -16,7 +16,7 @@ architecture tb of tb_memory is
 	signal data_addr: std_logic_vector(addr_width - 1 downto 0) := (others => '0');
 	signal data_in: std_logic_vector(2*data_width - 1 downto 0) := (others => '0');
 	signal data_out: std_logic_vector(4*data_width - 1 downto 0) := (others => '0');
-	signal halt : std_logic := '0';
+	signal end_test : std_logic := '0';
 
 begin
 
@@ -36,14 +36,14 @@ begin
 
 	clk: process is
 	begin
-		while halt = '0' loop
+		while end_test = '0' loop
 			clock <= not clock;
-			wait on halt for 1 ns;
+			wait on end_test for 500 ps;
 		end loop;
 		wait;
 	end process;
 
-	stimulus: process is
+	ctl: process is
 	begin
 		report "Test started";
 
@@ -73,8 +73,8 @@ begin
 
 		data_read <= '0';
 
+		end_test <= '1';
 		report "Test ended successfully";
-		halt <= '1';
 		wait;
 	end process;
 

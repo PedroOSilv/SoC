@@ -25,7 +25,7 @@ architecture tb of tb_codec is
 	);
 
 	-- This test will copy the input to the output verbatim
-	stimulus: process is
+	ctl: process is
 		variable lnum: natural := 0;
 	begin
 		report "Test started";
