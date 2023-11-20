@@ -1,11 +1,11 @@
 library ieee;
 use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
+use std.textio.all;
 
 entity soc is
 	generic (
-		firmware_filename: string := "firmware.bin";
-		addr_width: natural := 16;
-		data_width: natural := 8
+		firmware_filename: string := "firmware.bin"
 	);
 	port (
 		clock: in std_logic; -- Clock signal
@@ -14,6 +14,11 @@ entity soc is
 end entity;
 
 architecture mixed of soc is
+
+	constant addr_width: natural := 16;
+	constant data_width: natural := 8;
+
+	signal ctrl_clock: std_logic;
 
 	signal codec_inter: std_logic := '0';  -- cpu -> codec
 	signal codec_read: std_logic := '0';   -- cpu -> codec
@@ -28,13 +33,14 @@ architecture mixed of soc is
 	signal dmem_in: std_logic_vector(2*data_width - 1 downto 0);   -- cpu -> dmem
 	signal dmem_out: std_logic_vector(4*data_width - 1 downto 0);  -- dmem -> cpu
 
-	-- signal imem_read: std_logic := '0';   -- soc -> imem
 	signal imem_write: std_logic := '0';  -- soc -> imem
-	signal imem_addr: std_logic_vector(addr_width - 1 downto 0);  -- cpu -> imem
+	signal imem_addr: std_logic_vector(addr_width - 1 downto 0);  -- soc,cpu -> imem
 	signal imem_in: std_logic_vector(data_width - 1 downto 0);    -- soc -> imem
 	signal imem_out: std_logic_vector(data_width - 1 downto 0);   -- imem -> cpu
 
 begin
+
+	ctrl_clock <= clock and started;
 
 	codec: entity work.codec(behavioral)
 	port map (
@@ -52,7 +58,7 @@ begin
 		data_width => data_width
 	)
 	port map (
-		clock => clock,
+		clock => ctrl_clock,
 		data_read => dmem_read,
 		data_write => dmem_write,
 		data_addr => dmem_addr,
@@ -70,8 +76,9 @@ begin
 		data_read => clock,
 		data_write => imem_write,
 		data_addr => imem_addr,
-		data_in => imem_in,
-		data_out => imem_out
+		data_in(2*data_width - 1 downto data_width) => (others => '0'),
+		data_in(data_width - 1 downto 0) => imem_in,
+		data_out(4*data_width - 1 downto 3*data_width) => imem_out
 	);
 
 	cpu: entity work.cpu(behavioral)
@@ -80,7 +87,7 @@ begin
 		data_width => data_width
 	)
 	port map (
-		clock => clock,
+		clock => ctrl_clock,
 		halt => "not"(started),
 		codec_interrupt => codec_inter,
 		codec_read => codec_read,
@@ -98,10 +105,30 @@ begin
 	);
 
 	load: process is
+		file firmware: text open read_mode is firmware_filename;
+		variable instruction_str: line;
+		variable instruction_bv: bit_vector(data_width - 1 downto 0);
+		variable address: unsigned(addr_width - 1 downto 0) := (others => '0');
+		variable good: boolean;
 	begin
-		wait until rising_edge(started);
 
-		-- TODO load firmware to imem
+		while not endfile(firmware) loop
+			readline(firmware, instruction_str);
+			read(instruction_str, instruction_bv, good);
+			assert good
+				report "Failed to read firmware at address " & integer'image(to_integer(address))
+				severity failure;
+
+			wait until rising_edge(clock);
+
+			imem_write <= '1';
+			imem_addr <= std_logic_vector(address);
+			imem_in <= to_stdlogicvector(instruction_bv);
+
+			wait until falling_edge(clock);
+
+			address := address + 1;
+		end loop;
 
 		wait;
 	end process;
