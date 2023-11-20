@@ -46,6 +46,39 @@ architecture behavioral of cpu is
 	alias slv is std_logic_vector;
 	alias opcode: std_logic_vector(3 downto 0) is instruction_in(7 downto 4);
 	alias immediate: std_logic_vector(3 downto 0) is instruction_in(3 downto 0);
+	alias stack_top is mem_data_out(4*data_width - 1 downto 3*data_width);
+	alias stack_top_1 is mem_data_out(3*data_width - 1 downto 2*data_width);
+	alias stack_top_2 is mem_data_out(2*data_width - 1 downto data_width);
+	alias stack_top_3 is mem_data_out(data_width - 1 downto 0);
+
+	function "+" (v1: slv; v2: slv) return slv is
+	begin
+		return slv(unsigned(v1) + unsigned(v2));
+	end function;
+
+	function "-" (v1: slv; v2: slv) return slv is
+	begin
+		return slv(unsigned(v1) - unsigned(v2));
+	end function;
+
+	function "<" (v1: slv; v2: slv) return slv is
+	begin
+		if unsigned(v1) < unsigned(v2) then
+			return x"01";
+		else
+			return x"00";
+		end if;
+	end function;
+
+	function "sll" (v1: slv; v2: slv) return slv is
+	begin
+		return slv(unsigned(v1) sll to_integer(unsigned(v2)));
+	end function;
+
+	function "srl" (v1: slv; v2: slv) return slv is
+	begin
+		return slv(unsigned(v1) srl to_integer(unsigned(v2)));
+	end function;
 
 begin
 
@@ -53,12 +86,12 @@ begin
 		variable SP: unsigned(addr_width - 1 downto 0) := (others => '0');
 		variable IP: unsigned(addr_width - 1 downto 0) := (others => '0');
 	begin
-		wait until rising_edge(clock);
+		wait until rising_edge(clock) and halt = '0';
 
 		case opcode is
 
 			when "0000" =>  -- hlt
-				wait until falling_edge(halt);
+				-- wait until falling_edge(halt);
 				IP := (others => '0');
 				SP := (others => '0');
 
@@ -74,8 +107,7 @@ begin
 				-- Push byte onto stack
 				mem_data_read <= '0';
 				mem_data_write <= '1';
-				mem_data_in <= slv(resize(unsigned(codec_data_out), data_width))
-				             & (data_width-1 downto 0 => '0');
+				mem_data_in <= x"00" & codec_data_out;
 				mem_data_addr <= slv(SP);
 
 				SP := SP + 1;
@@ -111,8 +143,7 @@ begin
 			when "0100" =>  -- push
 				mem_data_read <= '0';
 				mem_data_write <= '1';
-				mem_data_in <= slv(resize(unsigned(immediate), data_width))
-				             & (data_width-1 downto 0 => '0');
+				mem_data_in <= x"00" & slv(resize(unsigned(immediate), data_width));
 				mem_data_addr <= slv(SP);
 
 				SP := SP + 1;
@@ -124,38 +155,98 @@ begin
 
 			when "0110" =>  -- dup
 				mem_data_read <= '1';
-				mem_data_write <= '0';
-				mem_data_addr <= slv(SP - 1);
-				wait until falling_edge(clock);
-				mem_data_read <= '0';
 				mem_data_write <= '1';
 				mem_data_addr <= slv(SP - 1);
-				mem_data_in <= mem_data_out(4*data_width - 1 downto 3*data_width)
-				             & mem_data_out(4*data_width - 1 downto 3*data_width);
+				wait until falling_edge(clock);
+				mem_data_in <= stack_top & stack_top;
 
 				SP := SP + 1;
 				IP := IP + 1;
 
 			when "1000" =>  -- add
+				mem_data_read <= '1';
+				mem_data_write <= '1';
+				mem_data_addr <= slv(SP - 1);
+				wait until falling_edge(clock);
+				mem_data_addr <= slv(SP - 2);
+				mem_data_in <= (others => '0');
+				mem_data_in <= stack_top + stack_top_1;
+
+				SP := SP - 1;
 				IP := IP + 1;
 
 			when "1001" =>  -- sub
+				mem_data_read <= '1';
+				mem_data_write <= '1';
+				mem_data_addr <= slv(SP - 1);
+				wait until falling_edge(clock);
+				mem_data_addr <= slv(SP - 2);
+				mem_data_in <= (others => '0');
+				mem_data_in <= stack_top - stack_top_1;
+
+				SP := SP - 1;
 				IP := IP + 1;
 
 			when "1010" =>  -- nand
+				mem_data_read <= '1';
+				mem_data_write <= '1';
+				mem_data_addr <= slv(SP - 1);
+				wait until falling_edge(clock);
+				mem_data_addr <= slv(SP - 2);
+				mem_data_in <= (others => '0');
+				mem_data_in <= stack_top nand stack_top_1;
+
+				SP := SP - 1;
 				IP := IP + 1;
 
 			when "1011" =>  -- slt
+				mem_data_read <= '1';
+				mem_data_write <= '1';
+				mem_data_addr <= slv(SP - 1);
+				wait until falling_edge(clock);
+				mem_data_addr <= slv(SP - 2);
+				mem_data_in <= (others => '0');
+				mem_data_in <= stack_top < stack_top_1;
+
+				SP := SP - 1;
 				IP := IP + 1;
 
 			when "1100" =>  -- shl
+				mem_data_read <= '1';
+				mem_data_write <= '1';
+				mem_data_addr <= slv(SP - 1);
+				wait until falling_edge(clock);
+				mem_data_addr <= slv(SP - 2);
+				mem_data_in <= (others => '0');
+				mem_data_in <= stack_top sll stack_top_1;
+
+				SP := SP - 1;
 				IP := IP + 1;
 
 			when "1101" =>  -- shr
+				mem_data_read <= '1';
+				mem_data_write <= '1';
+				mem_data_addr <= slv(SP - 1);
+				wait until falling_edge(clock);
+				mem_data_addr <= slv(SP - 2);
+				mem_data_in <= (others => '0');
+				mem_data_in <= stack_top srl stack_top_1;
+
+				SP := SP - 1;
 				IP := IP + 1;
 
 			when "1110" =>  -- jeq
-				-- IP := ...
+				mem_data_read <= '1';
+				mem_data_write <= '0';
+				mem_data_addr <= slv(SP - 1);
+				wait until falling_edge(clock);
+				if stack_top = stack_top_1 then
+					IP := unsigned(stack_top_2 & stack_top_3);
+				else
+					IP := IP + 1;
+				end if;
+
+				SP := SP - 4;
 
 			when "1111" =>  -- jmp
 				mem_data_read <= '1';
@@ -163,17 +254,15 @@ begin
 				mem_data_addr <= slv(SP - 1);
 
 				SP := SP - 2;
-				IP := unsigned(mem_data_out(4*data_width - 1 downto 2*data_width));
+				IP := unsigned(stack_top & stack_top_1);
 
 			when others =>
-				-- report "Illegal instruction (opcode '" & integer'image(to_integer(unsigned(opcode))) & "')";
 				report "Illegal instruction (opcode '" &
 					std_logic'image(opcode(3)) & std_logic'image(opcode(2)) &
 					std_logic'image(opcode(1)) & std_logic'image(opcode(0)) & "')"
 					severity failure;
 
 		end case;
-
 	end process;
 
 end architecture;
