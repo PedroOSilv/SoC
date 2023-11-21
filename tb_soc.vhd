@@ -28,8 +28,8 @@ begin
 	begin
 		while end_test = '0' loop
 			clock <= not clock;
-			wait on end_test for 500 ps;
 			nflips <= nflips + 1;
+			wait for 500 ps;
 		end loop;
 		wait;
 	end process;
@@ -41,10 +41,12 @@ begin
 		report "Bootup phase";
 		wait until nflips/2 >= cycles_boot;
 
+		wait until rising_edge(clock);
 		started <= '1';
 		report "Execution phase";
 		wait until nflips/2 >= cycles_boot + cycles_run;
 
+		wait until falling_edge(clock);
 		started <= '0';
 		end_test <= '1';
 		report "Test ended successfully";

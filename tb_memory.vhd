@@ -38,7 +38,7 @@ begin
 	begin
 		while end_test = '0' loop
 			clock <= not clock;
-			wait on end_test for 500 ps;
+			wait for 500 ps;
 		end loop;
 		wait;
 	end process;
