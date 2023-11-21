@@ -49,13 +49,13 @@ begin
 				lnum := lnum + 1;
 				codec_data_out <= to_stdlogicvector(datum_vec);
 			end if;
-			pulse_valid <= '1', '0' after 1 ns;
+			pulse_valid <= '1', '0' after 200 ps;
 		-- Output
 		elsif read_signal = '0' and write_signal = '1' then
 			datum_vec := to_bitvector(codec_data_in);
 			write(datum_str, datum_vec);
 			writeline(output, datum_str);
-			pulse_valid <= '1', '0' after 1 ns;
+			pulse_valid <= '1', '0' after 200 ps;
 		end if;
 
 	end process;

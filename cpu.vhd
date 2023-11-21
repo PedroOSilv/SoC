@@ -51,6 +51,21 @@ architecture behavioral of cpu is
 	alias stack_top_2 is mem_data_out(2*data_width - 1 downto data_width);
 	alias stack_top_3 is mem_data_out(data_width - 1 downto 0);
 
+	-- Auxiliaries to set initial values on control signals
+
+	signal codec_inter_aux: std_logic := '0';
+	signal codec_read_aux: std_logic := '0';
+	signal codec_write_aux: std_logic := '0';
+	signal mem_data_read_aux: std_logic := '0';
+	signal mem_data_write_aux: std_logic := '0';
+
+	-- Registers
+
+	signal IP: unsigned(addr_width - 1 downto 0) := (others => '0');
+	signal SP: unsigned(addr_width - 1 downto 0) := (others => '0');
+
+	-- Operator overloads to improve readability
+
 	function "+" (v1: slv; v2: slv) return slv is
 	begin
 		return slv(unsigned(v1) + unsigned(v2));
@@ -82,179 +97,237 @@ architecture behavioral of cpu is
 
 begin
 
-	process
-		variable SP: unsigned(addr_width - 1 downto 0) := (others => '0');
-		variable IP: unsigned(addr_width - 1 downto 0) := (others => '0');
+	-- Avoid undefined values on control signals
+	codec_interrupt <= codec_inter_aux;
+	codec_read <= codec_read_aux;
+	codec_write <= codec_write_aux;
+	mem_data_read <= mem_data_read_aux;
+	mem_data_write <= mem_data_write_aux;
+	instruction_addr <= slv(IP) when halt = '0' else (others => 'Z');
+
+	exc: process
 	begin
 		wait until rising_edge(clock) and halt = '0';
 
 		case opcode is
 
 			when "0000" =>  -- hlt
-				-- wait until falling_edge(halt);
-				IP := (others => '0');
-				SP := (others => '0');
+				IP <= (others => '0');
+				SP <= (others => '0');
 
 			when "0001" =>  -- in
-				-- Read byte from input
-				codec_interrupt <= '1';
-				wait until falling_edge(clock);
-				codec_interrupt <= '0';
-				codec_read <= '1';
-				codec_write <= '0';
+				-- Read from input
+				codec_read_aux <= '1';
+				codec_inter_aux <= '1';
+				wait on codec_inter_aux'transaction;
+				codec_inter_aux <= '0';
 				wait until falling_edge(codec_valid);
+				codec_read_aux <= '0';
 
-				-- Push byte onto stack
-				mem_data_read <= '0';
-				mem_data_write <= '1';
-				mem_data_in <= x"00" & codec_data_out;
+				-- Push onto stack
 				mem_data_addr <= slv(SP);
+				mem_data_in <= x"00" & codec_data_out;
+				mem_data_write_aux <= '1';
+				wait until falling_edge(clock);
+				mem_data_write_aux <= '0';
 
-				SP := SP + 1;
-				IP := IP + 1;
+				IP <= IP + 1;
+				SP <= SP + 1;
 
 			when "0010" =>  -- out
-				-- Pop byte from stack
-				mem_data_read <= '1';
-				mem_data_write <= '0';
+				-- Pop from stack
 				mem_data_addr <= slv(SP);
+				mem_data_read_aux <= '1';
+				wait on mem_data_out'transaction;
+				mem_data_read_aux <= '0';
 
-				-- Write byte to output
-				codec_interrupt <= '1';
-				wait until falling_edge(clock);
-				codec_interrupt <= '0';
-				codec_read <= '0';
-				codec_write <= '1';
-				codec_data_in <= mem_data_out(4*data_width-1 downto 3*data_width);
+				-- Write to output
+				codec_data_in <= stack_top;
+				codec_write_aux <= '1';
+				codec_inter_aux <= '1';
+				wait on codec_inter_aux'transaction;
+				codec_inter_aux <= '0';
 				wait until falling_edge(codec_valid);
+				codec_write_aux <= '0';
 
-				SP := SP - 1;
-				IP := IP + 1;
+				IP <= IP + 1;
+				SP <= SP - 1;
 
 			when "0011" =>  -- puship
-				mem_data_read <= '0';
-				mem_data_write <= '1';
-				mem_data_in <= slv(IP);
+				-- Push onto stack
 				mem_data_addr <= slv(SP);
+				mem_data_in <= slv(IP);
+				mem_data_write_aux <= '1';
+				wait until falling_edge(clock);
+				mem_data_write_aux <= '0';
 
-				SP := SP + 2;
-				IP := IP + 1;
+				IP <= IP + 1;
+				SP <= SP + 2;
 
 			when "0100" =>  -- push
-				mem_data_read <= '0';
-				mem_data_write <= '1';
-				mem_data_in <= x"00" & slv(resize(unsigned(immediate), data_width));
+				-- Push onto stack
 				mem_data_addr <= slv(SP);
+				mem_data_in <= x"00" & slv(resize(unsigned(immediate), data_width));
+				mem_data_write_aux <= '1';
+				wait until falling_edge(clock);
+				mem_data_write_aux <= '0';
 
-				SP := SP + 1;
-				IP := IP + 1;
+				IP <= IP + 1;
+				SP <= SP + 1;
 
 			when "0101" =>  -- drop
-				SP := SP - 1;
-				IP := IP + 1;
+				IP <= IP + 1;
+				SP <= SP - 1;
 
 			when "0110" =>  -- dup
-				mem_data_read <= '1';
-				mem_data_write <= '1';
+				-- Pop from stack
 				mem_data_addr <= slv(SP - 1);
-				wait until falling_edge(clock);
-				mem_data_in <= stack_top & stack_top;
+				mem_data_read_aux <= '1';
+				wait on mem_data_out'transaction;
+				mem_data_read_aux <= '0';
 
-				SP := SP + 1;
-				IP := IP + 1;
+				-- Push onto stack
+				mem_data_in <= stack_top & stack_top;
+				mem_data_write_aux <= '1';
+				wait until falling_edge(clock);
+				mem_data_write_aux <= '0';
+
+				IP <= IP + 1;
+				SP <= SP + 1;
 
 			when "1000" =>  -- add
-				mem_data_read <= '1';
-				mem_data_write <= '1';
+				-- Pop from stack
 				mem_data_addr <= slv(SP - 1);
-				wait until falling_edge(clock);
+				mem_data_read_aux <= '1';
+				wait on mem_data_out'transaction;
+				mem_data_read_aux <= '0';
+
+				-- Push onto stack
 				mem_data_addr <= slv(SP - 2);
 				mem_data_in <= (others => '0');
 				mem_data_in <= stack_top + stack_top_1;
+				mem_data_write_aux <= '1';
+				wait until falling_edge(clock);
+				mem_data_write_aux <= '0';
 
-				SP := SP - 1;
-				IP := IP + 1;
+				IP <= IP + 1;
+				SP <= SP - 1;
 
 			when "1001" =>  -- sub
-				mem_data_read <= '1';
-				mem_data_write <= '1';
+				-- Pop from stack
 				mem_data_addr <= slv(SP - 1);
-				wait until falling_edge(clock);
+				mem_data_read_aux <= '1';
+				wait on mem_data_out'transaction;
+				mem_data_read_aux <= '0';
+
+				-- Push onto stack
 				mem_data_addr <= slv(SP - 2);
 				mem_data_in <= (others => '0');
 				mem_data_in <= stack_top - stack_top_1;
+				mem_data_write_aux <= '1';
+				wait until falling_edge(clock);
+				mem_data_write_aux <= '0';
 
-				SP := SP - 1;
-				IP := IP + 1;
+				IP <= IP + 1;
+				SP <= SP - 1;
 
 			when "1010" =>  -- nand
-				mem_data_read <= '1';
-				mem_data_write <= '1';
+				-- Pop from stack
 				mem_data_addr <= slv(SP - 1);
-				wait until falling_edge(clock);
+				mem_data_read_aux <= '1';
+				wait on mem_data_out'transaction;
+				mem_data_read_aux <= '0';
+
+				-- Push onto stack
 				mem_data_addr <= slv(SP - 2);
 				mem_data_in <= (others => '0');
 				mem_data_in <= stack_top nand stack_top_1;
+				mem_data_write_aux <= '1';
+				wait until falling_edge(clock);
+				mem_data_write_aux <= '0';
 
-				SP := SP - 1;
-				IP := IP + 1;
+				IP <= IP + 1;
+				SP <= SP - 1;
 
 			when "1011" =>  -- slt
-				mem_data_read <= '1';
-				mem_data_write <= '1';
+				-- Pop from stack
 				mem_data_addr <= slv(SP - 1);
-				wait until falling_edge(clock);
+				mem_data_read_aux <= '1';
+				wait on mem_data_out'transaction;
+				mem_data_read_aux <= '0';
+
+				-- Push onto stack
 				mem_data_addr <= slv(SP - 2);
 				mem_data_in <= (others => '0');
 				mem_data_in <= stack_top < stack_top_1;
+				mem_data_write_aux <= '1';
+				wait until falling_edge(clock);
+				mem_data_write_aux <= '0';
 
-				SP := SP - 1;
-				IP := IP + 1;
+				IP <= IP + 1;
+				SP <= SP - 1;
 
 			when "1100" =>  -- shl
-				mem_data_read <= '1';
-				mem_data_write <= '1';
+				-- Pop from stack
 				mem_data_addr <= slv(SP - 1);
-				wait until falling_edge(clock);
+				mem_data_read_aux <= '1';
+				wait on mem_data_out'transaction;
+				mem_data_read_aux <= '0';
+
+				-- Push onto stack
 				mem_data_addr <= slv(SP - 2);
 				mem_data_in <= (others => '0');
 				mem_data_in <= stack_top sll stack_top_1;
+				mem_data_write_aux <= '1';
+				wait until falling_edge(clock);
+				mem_data_write_aux <= '0';
 
-				SP := SP - 1;
-				IP := IP + 1;
+				IP <= IP + 1;
+				SP <= SP - 1;
 
 			when "1101" =>  -- shr
-				mem_data_read <= '1';
-				mem_data_write <= '1';
+				-- Pop from stack
 				mem_data_addr <= slv(SP - 1);
-				wait until falling_edge(clock);
+				mem_data_read_aux <= '1';
+				wait on mem_data_out'transaction;
+				mem_data_read_aux <= '0';
+
+				-- Push onto stack
 				mem_data_addr <= slv(SP - 2);
 				mem_data_in <= (others => '0');
 				mem_data_in <= stack_top srl stack_top_1;
+				mem_data_write_aux <= '1';
+				wait until falling_edge(clock);
+				mem_data_write_aux <= '0';
 
-				SP := SP - 1;
-				IP := IP + 1;
+				IP <= IP + 1;
+				SP <= SP - 1;
 
 			when "1110" =>  -- jeq
-				mem_data_read <= '1';
-				mem_data_write <= '0';
+				-- Pop from stack
 				mem_data_addr <= slv(SP - 1);
-				wait until falling_edge(clock);
-				if stack_top = stack_top_1 then
-					IP := unsigned(stack_top_2 & stack_top_3);
-				else
-					IP := IP + 1;
-				end if;
+				mem_data_read_aux <= '1';
+				wait on mem_data_out'transaction;
+				mem_data_read_aux <= '0';
 
-				SP := SP - 4;
+				-- Update IP
+				if stack_top = stack_top_1 then
+					IP <= unsigned(stack_top_2 & stack_top_3);
+				else
+					IP <= IP + 1;
+				end if;
+				SP <= SP - 4;
 
 			when "1111" =>  -- jmp
-				mem_data_read <= '1';
-				mem_data_write <= '0';
+				-- Pop from stack
 				mem_data_addr <= slv(SP - 1);
+				mem_data_read_aux <= '1';
+				wait on mem_data_out'transaction;
+				mem_data_read_aux <= '0';
 
-				SP := SP - 2;
-				IP := unsigned(stack_top & stack_top_1);
+				-- Update IP
+				IP <= unsigned(stack_top & stack_top_1);
+				SP <= SP - 2;
 
 			when others =>
 				report "Illegal instruction (opcode '" &

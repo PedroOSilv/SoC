@@ -130,6 +130,8 @@ begin
 			address := address + 1;
 		end loop;
 
+		imem_addr <= (others => 'Z');
+		imem_write <= '0';
 		wait;
 	end process;
 
