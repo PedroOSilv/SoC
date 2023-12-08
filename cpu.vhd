@@ -195,6 +195,21 @@ begin
 				IP <= IP + 1;
 				SP <= SP + 1;
 
+			when "0111" =>  -- swp
+				-- Pop from stack
+				mem_data_addr <= slv(SP - 1);
+				mem_data_read_aux <= '1';
+				wait on mem_data_out'transaction;
+				mem_data_read_aux <= '0';
+
+				-- Push onto stack
+				mem_data_in <= stack_top_1 & stack_top;
+				mem_data_write_aux <= '1';
+				wait until falling_edge(clock);
+				mem_data_write_aux <= '0';
+
+				IP <= IP + 1;
+
 			when "1000" =>  -- add
 				-- Pop from stack
 				mem_data_addr <= slv(SP - 1);
@@ -311,8 +326,8 @@ begin
 				mem_data_read_aux <= '0';
 
 				-- Update IP
-				if stack_top = stack_top_1 then
-					IP <= unsigned(stack_top_2 & stack_top_3);
+				if stack_top_2 = stack_top_3 then
+					IP <= unsigned(stack_top & stack_top_1);
 				else
 					IP <= IP + 1;
 				end if;
