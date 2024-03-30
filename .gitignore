@@ -1,5 +1,7 @@
 *.cf
 *.ghw
 *.gtkw
+*.pdf
 input.txt
 output.txt
+firmware.bin
