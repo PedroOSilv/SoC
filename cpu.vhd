@@ -138,7 +138,7 @@ begin
 
 			when "0010" =>  -- out
 				-- Pop from stack
-				mem_data_addr <= slv(SP);
+				mem_data_addr <= slv(SP - 1);
 				mem_data_read_aux <= '1';
 				wait on mem_data_out'transaction;
 				mem_data_read_aux <= '0';
