@@ -43,6 +43,11 @@ end entity;
 
 architecture behavioral of cpu is
 
+	-- One word's worth of padding
+	constant padding: std_logic_vector(data_width - 1 downto 0) := (others => '0');
+
+	-- Aliases to improve readability
+
 	alias slv is std_logic_vector;
 	alias opcode: std_logic_vector(3 downto 0) is instruction_in(7 downto 4);
 	alias immediate: std_logic_vector(3 downto 0) is instruction_in(3 downto 0);
@@ -77,12 +82,12 @@ architecture behavioral of cpu is
 	end function;
 
 	function "<" (v1: slv; v2: slv) return slv is
+		variable result: slv(data_width - 1 downto 0) := (others => '0');
 	begin
 		if unsigned(v1) < unsigned(v2) then
-			return x"01";
-		else
-			return x"00";
+			result(0) := '1';
 		end if;
+		return result;
 	end function;
 
 	function "sll" (v1: slv; v2: slv) return slv is
@@ -127,7 +132,7 @@ begin
 
 				-- Push onto stack
 				mem_data_addr <= slv(SP);
-				mem_data_in <= x"00" & codec_data_out;
+				mem_data_in <= padding & codec_data_out;
 				mem_data_write_aux <= '1';
 				wait until falling_edge(clock);
 				mem_data_write_aux <= '0';
@@ -171,7 +176,7 @@ begin
 			when "0100" =>  -- push
 				-- Push onto stack
 				mem_data_addr <= slv(SP);
-				mem_data_in <= x"00" & slv(resize(unsigned(immediate), data_width));
+				mem_data_in <= padding & slv(resize(unsigned(immediate), data_width));
 				mem_data_write_aux <= '1';
 				wait until falling_edge(clock);
 				mem_data_write_aux <= '0';
@@ -211,8 +216,7 @@ begin
 
 				-- Push onto stack
 				mem_data_addr <= slv(SP - 2);
-				mem_data_in <= (others => '0');
-				mem_data_in <= stack_top + stack_2nd;
+				mem_data_in <= padding & stack_top + stack_2nd;
 				mem_data_write_aux <= '1';
 				wait until falling_edge(clock);
 				mem_data_write_aux <= '0';
@@ -230,8 +234,7 @@ begin
 
 				-- Push onto stack
 				mem_data_addr <= slv(SP - 2);
-				mem_data_in <= (others => '0');
-				mem_data_in <= stack_top - stack_2nd;
+				mem_data_in <= padding & stack_top - stack_2nd;
 				mem_data_write_aux <= '1';
 				wait until falling_edge(clock);
 				mem_data_write_aux <= '0';
@@ -249,8 +252,7 @@ begin
 
 				-- Push onto stack
 				mem_data_addr <= slv(SP - 2);
-				mem_data_in <= (others => '0');
-				mem_data_in <= stack_top nand stack_2nd;
+				mem_data_in <= padding & (stack_top nand stack_2nd);
 				mem_data_write_aux <= '1';
 				wait until falling_edge(clock);
 				mem_data_write_aux <= '0';
@@ -268,8 +270,7 @@ begin
 
 				-- Push onto stack
 				mem_data_addr <= slv(SP - 2);
-				mem_data_in <= (others => '0');
-				mem_data_in <= stack_top < stack_2nd;
+				mem_data_in <= padding & (stack_top < stack_2nd);
 				mem_data_write_aux <= '1';
 				wait until falling_edge(clock);
 				mem_data_write_aux <= '0';
@@ -287,8 +288,7 @@ begin
 
 				-- Push onto stack
 				mem_data_addr <= slv(SP - 2);
-				mem_data_in <= (others => '0');
-				mem_data_in <= stack_top sll stack_2nd;
+				mem_data_in <= padding & (stack_top sll stack_2nd);
 				mem_data_write_aux <= '1';
 				wait until falling_edge(clock);
 				mem_data_write_aux <= '0';
@@ -306,8 +306,7 @@ begin
 
 				-- Push onto stack
 				mem_data_addr <= slv(SP - 2);
-				mem_data_in <= (others => '0');
-				mem_data_in <= stack_top srl stack_2nd;
+				mem_data_in <= padding & (stack_top srl stack_2nd);
 				mem_data_write_aux <= '1';
 				wait until falling_edge(clock);
 				mem_data_write_aux <= '0';
@@ -343,9 +342,9 @@ begin
 				SP <= SP - 2;
 
 			when others =>
-				report "Illegal instruction (opcode '" &
+				report "Instruction decode error (opcode " &
 					std_logic'image(opcode(3)) & std_logic'image(opcode(2)) &
-					std_logic'image(opcode(1)) & std_logic'image(opcode(0)) & "')"
+					std_logic'image(opcode(1)) & std_logic'image(opcode(0)) & ")"
 					severity failure;
 
 		end case;

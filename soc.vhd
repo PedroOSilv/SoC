@@ -34,9 +34,9 @@ architecture mixed of soc is
 	signal dmem_out: std_logic_vector(4*data_width - 1 downto 0);  -- dmem -> cpu
 
 	signal imem_write: std_logic := '0';  -- soc -> imem
-	signal imem_addr: std_logic_vector(addr_width - 1 downto 0);  -- soc,cpu -> imem
-	signal imem_in: std_logic_vector(data_width - 1 downto 0);    -- soc -> imem
-	signal imem_out: std_logic_vector(data_width - 1 downto 0);   -- imem -> cpu
+	signal imem_addr: std_logic_vector(addr_width - 1 downto 0);   -- soc,cpu -> imem
+	signal imem_in: std_logic_vector(2*data_width - 1 downto 0);   -- soc -> imem
+	signal imem_out: std_logic_vector(4*data_width - 1 downto 0);  -- imem -> cpu
 
 begin
 
@@ -76,9 +76,8 @@ begin
 		data_read => clock,
 		data_write => imem_write,
 		data_addr => imem_addr,
-		data_in(2*data_width - 1 downto data_width) => (others => '0'),
-		data_in(data_width - 1 downto 0) => imem_in,
-		data_out(4*data_width - 1 downto 3*data_width) => imem_out
+		data_in => imem_in,
+		data_out => imem_out
 	);
 
 	cpu: entity work.cpu(behavioral)
@@ -100,7 +99,7 @@ begin
 		mem_data_addr => dmem_addr,
 		mem_data_in => dmem_in,
 		mem_data_out => dmem_out,
-		instruction_in => imem_out,
+		instruction_in => imem_out(4*data_width - 1 downto 3*data_width),
 		instruction_addr => imem_addr
 	);
 
@@ -111,6 +110,8 @@ begin
 		variable address: unsigned(addr_width - 1 downto 0) := (others => '0');
 		variable good: boolean;
 	begin
+
+		imem_in(2*data_width - 1 downto data_width) <= (others => '0');
 
 		while not endfile(firmware) loop
 			readline(firmware, instruction_str);
@@ -123,7 +124,7 @@ begin
 
 			imem_write <= '1';
 			imem_addr <= std_logic_vector(address);
-			imem_in <= to_stdlogicvector(instruction_bv);
+			imem_in(data_width - 1 downto 0) <= to_stdlogicvector(instruction_bv);
 
 			wait until falling_edge(clock);
 
