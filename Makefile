@@ -1,32 +1,22 @@
-GHDL:=ghdl
-SRC:=$(wildcard *.vhd)
-TB_SRC:=$(wildcard tb_*.vhd)
-UNIT:=$(basename $(SRC))
-TB_UNIT:=$(basename $(TB_SRC))
-WAVE:=$(addsuffix .ghw,$(TB_UNIT))
-WORK_OBJ:=work-obj93.cf
+GHDL := ghdl
+TB_SRC := $(wildcard tb_*.vhd)
+SRC := $(filter-out $(TB_SRC),$(wildcard *.vhd))
+WAVE := $(addsuffix .ghw,$(basename $(TB_SRC)))
 
-.PHONY: tb all run clean check
+.PHONY: all check run clean
 
-tb: $(WORK_OBJ) $(TB_UNIT)
+all: check run
 
-all: $(WORK_OBJ) $(UNIT)
+check: $(SRC) $(TB_SRC)
+	$(GHDL) -a $?
 
-run: $(WORK_OBJ) $(WAVE)
+run: check $(WAVE)
+
+%.ghw: $(SRC) %.vhd
+#	Elaboration is optional for the mcode backend
+#	$(GHDL) -e $*
+	$(GHDL) -r $* --wave=$@
 
 clean:
-	rm -f *.cf
-	rm -f *.ghw
-
-check: $(SRC)
-	$(GHDL) -s $^
-	$(GHDL) -a $^
-
-$(WORK_OBJ): $(SRC)
-	$(GHDL) -i $?
-
-%.ghw: %
-	$(GHDL) -r $(*F) --wave=$@
-
-%: %.vhd
-	$(GHDL) -m -v $@
+	$(GHDL) --remove
+	del *.ghw
