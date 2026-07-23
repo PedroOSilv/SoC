@@ -1,20 +1,20 @@
 library ieee;
 use ieee.std_logic_1164.all;
-use std.textio.all;
 
 entity tb_codec is
 end entity;
 
 architecture tb of tb_codec is
+
 	signal interrupt: std_logic := '0';
 	signal read_signal: std_logic := '0';
 	signal write_signal: std_logic := '0';
 	signal valid: std_logic := '0';
 	signal codec_data: std_logic_vector(7 downto 0);
 
-	begin
+begin
 
-	ent: entity work.codec(behavioral)
+	dut: entity work.codec(behavioral)
 	port map (
 		interrupt => interrupt,
 		read_signal => read_signal,

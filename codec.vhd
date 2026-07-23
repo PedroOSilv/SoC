@@ -26,7 +26,7 @@ begin
 
 	valid <= pulse_valid;
 
-	process
+	process is
 		variable datum_vec: bit_vector(7 downto 0);
 		variable datum_str: line;
 		variable lnum: natural := 1;

@@ -20,7 +20,7 @@ architecture tb of tb_memory is
 
 begin
 
-	ent: entity work.memory(ram)
+	dut: entity work.memory(ram)
 	generic map (
 		addr_width => addr_width,
 		data_width => data_width

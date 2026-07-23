@@ -105,13 +105,14 @@ begin
 	mem_data_write <= mem_data_write_aux;
 	instruction_addr <= slv(IP) when halt = '0' else (others => 'Z');
 
-	exc: process
+	exc: process is
 	begin
 		wait until rising_edge(clock) and halt = '0';
 
 		case opcode is
 
 			when "0000" =>  -- hlt
+				-- Update registers
 				IP <= (others => '0');
 				SP <= (others => '0');
 
@@ -131,6 +132,7 @@ begin
 				wait until falling_edge(clock);
 				mem_data_write_aux <= '0';
 
+				-- Update registers
 				IP <= IP + 1;
 				SP <= SP + 1;
 
@@ -150,6 +152,7 @@ begin
 				wait until falling_edge(codec_valid);
 				codec_write_aux <= '0';
 
+				-- Update registers
 				IP <= IP + 1;
 				SP <= SP - 1;
 
@@ -161,6 +164,7 @@ begin
 				wait until falling_edge(clock);
 				mem_data_write_aux <= '0';
 
+				-- Update registers
 				IP <= IP + 1;
 				SP <= SP + 2;
 
@@ -172,10 +176,12 @@ begin
 				wait until falling_edge(clock);
 				mem_data_write_aux <= '0';
 
+				-- Update registers
 				IP <= IP + 1;
 				SP <= SP + 1;
 
 			when "0101" =>  -- drop
+				-- Update registers
 				IP <= IP + 1;
 				SP <= SP - 1;
 
@@ -192,6 +198,7 @@ begin
 				wait until falling_edge(clock);
 				mem_data_write_aux <= '0';
 
+				-- Update registers
 				IP <= IP + 1;
 				SP <= SP + 1;
 
@@ -210,6 +217,7 @@ begin
 				wait until falling_edge(clock);
 				mem_data_write_aux <= '0';
 
+				-- Update registers
 				IP <= IP + 1;
 				SP <= SP - 1;
 
@@ -228,6 +236,7 @@ begin
 				wait until falling_edge(clock);
 				mem_data_write_aux <= '0';
 
+				-- Update registers
 				IP <= IP + 1;
 				SP <= SP - 1;
 
@@ -246,6 +255,7 @@ begin
 				wait until falling_edge(clock);
 				mem_data_write_aux <= '0';
 
+				-- Update registers
 				IP <= IP + 1;
 				SP <= SP - 1;
 
@@ -264,6 +274,7 @@ begin
 				wait until falling_edge(clock);
 				mem_data_write_aux <= '0';
 
+				-- Update registers
 				IP <= IP + 1;
 				SP <= SP - 1;
 
@@ -282,6 +293,7 @@ begin
 				wait until falling_edge(clock);
 				mem_data_write_aux <= '0';
 
+				-- Update registers
 				IP <= IP + 1;
 				SP <= SP - 1;
 
@@ -300,6 +312,7 @@ begin
 				wait until falling_edge(clock);
 				mem_data_write_aux <= '0';
 
+				-- Update registers
 				IP <= IP + 1;
 				SP <= SP - 1;
 
@@ -310,7 +323,7 @@ begin
 				wait on mem_data_out'transaction;
 				mem_data_read_aux <= '0';
 
-				-- Update IP
+				-- Update registers
 				if stack_top = stack_top_1 then
 					IP <= unsigned(stack_top_2 & stack_top_3);
 				else
@@ -325,7 +338,7 @@ begin
 				wait on mem_data_out'transaction;
 				mem_data_read_aux <= '0';
 
-				-- Update IP
+				-- Update registers
 				IP <= unsigned(stack_top & stack_top_1);
 				SP <= SP - 2;
 

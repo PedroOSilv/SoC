@@ -5,6 +5,7 @@ entity tb_soc is
 end entity;
 
 architecture tb of tb_soc is
+
 	constant cycles_boot: positive := 6;  -- Length of firmware
 	constant cycles_run: positive := 5;  -- Expected run time
 
@@ -15,7 +16,7 @@ architecture tb of tb_soc is
 
 begin
 
-	ent: entity work.soc(mixed)
+	dut: entity work.soc(mixed)
 	generic map (
 		firmware_filename => "firmware.bin"
 	)

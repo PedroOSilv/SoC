@@ -5,6 +5,7 @@ entity tb_cpu is
 end entity;
 
 architecture tb of tb_cpu is
+
 	constant addr_width : natural := 16;
 	constant data_width : natural := 8;
 
@@ -29,7 +30,7 @@ architecture tb of tb_cpu is
 
 begin
 
-	ent: entity work.cpu(behavioral)
+	dut: entity work.cpu(behavioral)
 	generic map (
 		addr_width => addr_width,
 		data_width => data_width

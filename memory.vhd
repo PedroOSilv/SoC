@@ -31,7 +31,7 @@ architecture ram of memory is
 
 begin
 
-	dr: process (clock)
+	dr: process (clock) is
 	begin
 		if rising_edge(clock) and data_read = '1' then
 			data_out <= mem(to_integer(unsigned(data_addr)))
@@ -41,7 +41,7 @@ begin
 		end if;
 	end process;
 
-	dw: process (clock)
+	dw: process (clock) is
 	begin
 		if falling_edge(clock) and data_write = '1' then
 			mem(to_integer(unsigned(data_addr)) + 1) <= data_in(2*data_width - 1 downto data_width);
