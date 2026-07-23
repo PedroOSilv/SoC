@@ -2,12 +2,13 @@ library ieee;
 use ieee.std_logic_1164.all;
 
 entity tb_soc is
+	generic (
+		cycles_boot: positive := 1;  -- Length of firmware
+		cycles_run: positive := 1  -- Expected run time
+	);
 end entity;
 
 architecture tb of tb_soc is
-
-	constant cycles_boot: positive := 6;  -- Length of firmware
-	constant cycles_run: positive := 5;  -- Expected run time
 
 	signal end_test: std_logic := '0';
 	signal started: std_logic := '0';
