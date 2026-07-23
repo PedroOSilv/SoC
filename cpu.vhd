@@ -9,7 +9,7 @@ generic (
 );
 port (
 	clock: in std_logic;
-	halt: in std_logic; -- Halt processor execution when '1'
+	reset: in std_logic; -- Halt processor execution when '1'
 
 	---- Begin Memory Signals ---
 	-- Instruction byte received from memory
@@ -108,11 +108,11 @@ begin
 	codec_write <= codec_write_aux;
 	mem_data_read <= mem_data_read_aux;
 	mem_data_write <= mem_data_write_aux;
-	instruction_addr <= slv(IP) when halt = '0' else (others => 'Z');
+	instruction_addr <= slv(IP) when reset = '0' else (others => 'Z');
 
 	exc: process is
 	begin
-		wait until rising_edge(clock) and halt = '0';
+		wait until rising_edge(clock) and reset = '0';
 
 		case opcode is
 
@@ -315,7 +315,7 @@ begin
 				IP <= IP + 1;
 				SP <= SP - 1;
 
-			when "1110" =>  -- jeq
+			when "1110" =>  -- beq
 				-- Pop from stack
 				mem_data_addr <= slv(SP - 1);
 				mem_data_read_aux <= '1';

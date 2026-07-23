@@ -87,7 +87,7 @@ begin
 	)
 	port map (
 		clock => ctrl_clock,
-		halt => "not"(started),
+		reset => "not"(started),
 		codec_interrupt => codec_inter,
 		codec_read => codec_read,
 		codec_write => codec_write,

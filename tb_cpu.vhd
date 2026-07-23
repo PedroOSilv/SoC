@@ -37,7 +37,7 @@ begin
 	)
 	port map (
 		clock => clock,
-		halt => end_test,
+		reset => end_test,
 		instruction_in => instruction_in,
 		instruction_addr => instruction_addr,
 		mem_data_read => mem_data_read,
