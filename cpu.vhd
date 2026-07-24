@@ -325,7 +325,7 @@ begin
 
 				-- Update registers
 				if stack_top = stack_2nd then
-					IP <= unsigned(stack_3rd & stack_4th);
+					IP <= IP + unsigned(stack_4th & stack_3rd);
 				else
 					IP <= IP + 1;
 				end if;
@@ -339,7 +339,7 @@ begin
 				mem_data_read_aux <= '0';
 
 				-- Update registers
-				IP <= unsigned(stack_top & stack_2nd);
+				IP <= unsigned(stack_2nd & stack_top);
 				SP <= SP - 2;
 
 			when others =>
