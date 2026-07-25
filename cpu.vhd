@@ -207,6 +207,23 @@ begin
 				IP <= IP + 1;
 				SP <= SP + 1;
 
+			when "0111" =>  -- swp
+				-- Pop from stack
+				mem_data_addr <= slv(SP - 1);
+				mem_data_read_aux <= '1';
+				wait on mem_data_out'transaction;
+				mem_data_read_aux <= '0';
+
+				-- Push onto stack
+				mem_data_addr <= slv(SP - 2);
+				mem_data_in <= stack_top & stack_2nd;
+				mem_data_write_aux <= '1';
+				wait until falling_edge(clock);
+				mem_data_write_aux <= '0';
+
+				-- Update registers
+				IP <= IP + 1;
+
 			when "1000" =>  -- add
 				-- Pop from stack
 				mem_data_addr <= slv(SP - 1);
