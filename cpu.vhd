@@ -340,8 +340,8 @@ begin
 				mem_data_read_aux <= '0';
 
 				-- Update registers
-				if stack_top = stack_2nd then
-					IP <= IP + unsigned(stack_4th & stack_3rd);
+				if stack_3rd = stack_4th then
+					IP <= IP + unsigned(stack_2nd & stack_top);
 				else
 					IP <= IP + 1;
 				end if;
