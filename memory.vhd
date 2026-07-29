@@ -35,10 +35,10 @@ begin
 	begin
 		if rising_edge(clock) then
 			if data_read = '1' and data_write = '0' then
-				data_out <= mem(to_integer(unsigned(data_addr)))
-				          & mem(to_integer(unsigned(data_addr)) - 1)
+				data_out <= mem(to_integer(unsigned(data_addr)) - 3)
 				          & mem(to_integer(unsigned(data_addr)) - 2)
-				          & mem(to_integer(unsigned(data_addr)) - 3);
+				          & mem(to_integer(unsigned(data_addr)) - 1)
+				          & mem(to_integer(unsigned(data_addr)));
 			end if;
 		end if;
 	end process;
@@ -47,8 +47,8 @@ begin
 	begin
 		if falling_edge(clock) then
 			if data_read = '0' and data_write = '1' then
-				mem(to_integer(unsigned(data_addr)) + 1) <= data_in(2*data_width - 1 downto data_width);
-				mem(to_integer(unsigned(data_addr)))     <= data_in(data_width - 1 downto 0);
+				mem(to_integer(unsigned(data_addr)))     <= data_in(2*data_width - 1 downto data_width);
+				mem(to_integer(unsigned(data_addr)) + 1) <= data_in(data_width - 1 downto 0);
 			end if;
 		end if;
 	end process;

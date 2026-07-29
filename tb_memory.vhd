@@ -67,7 +67,7 @@ begin
 
 		wait until falling_edge(clock);
 
-		assert data_out = x"CDEF89AB"
+		assert data_out = x"89ABCDEF"
 			report "Data read not the same as data written"
 			severity failure;
 

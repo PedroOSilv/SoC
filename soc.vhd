@@ -99,7 +99,7 @@ begin
 		mem_data_addr => dmem_addr,
 		mem_data_in => dmem_in,
 		mem_data_out => dmem_out,
-		instruction_in => imem_out(4*data_width - 1 downto 3*data_width),
+		instruction_in => imem_out(data_width - 1 downto 0),
 		instruction_addr => imem_addr
 	);
 
@@ -111,7 +111,7 @@ begin
 		variable good: boolean;
 	begin
 
-		imem_in(2*data_width - 1 downto data_width) <= (others => '0');
+		imem_in(data_width - 1 downto 0) <= (others => '0');
 
 		while not endfile(firmware) loop
 			readline(firmware, instruction_str);
@@ -124,7 +124,7 @@ begin
 
 			imem_write <= '1';
 			imem_addr <= std_logic_vector(address);
-			imem_in(data_width - 1 downto 0) <= to_stdlogicvector(instruction_bv);
+			imem_in(2*data_width - 1 downto data_width) <= to_stdlogicvector(instruction_bv);
 
 			wait until falling_edge(clock);
 
