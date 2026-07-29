@@ -47,9 +47,9 @@ architecture behavioral of cpu is
 	alias opcode: std_logic_vector(3 downto 0) is instruction_in(7 downto 4);
 	alias immediate: std_logic_vector(3 downto 0) is instruction_in(3 downto 0);
 	alias stack_top is mem_data_out(4*data_width - 1 downto 3*data_width);
-	alias stack_top_1 is mem_data_out(3*data_width - 1 downto 2*data_width);
-	alias stack_top_2 is mem_data_out(2*data_width - 1 downto data_width);
-	alias stack_top_3 is mem_data_out(data_width - 1 downto 0);
+	alias stack_2nd is mem_data_out(3*data_width - 1 downto 2*data_width);
+	alias stack_3rd is mem_data_out(2*data_width - 1 downto data_width);
+	alias stack_4th is mem_data_out(data_width - 1 downto 0);
 
 	-- Auxiliaries to set initial values on control signals
 
@@ -212,7 +212,7 @@ begin
 				-- Push onto stack
 				mem_data_addr <= slv(SP - 2);
 				mem_data_in <= (others => '0');
-				mem_data_in <= stack_top + stack_top_1;
+				mem_data_in <= stack_top + stack_2nd;
 				mem_data_write_aux <= '1';
 				wait until falling_edge(clock);
 				mem_data_write_aux <= '0';
@@ -231,7 +231,7 @@ begin
 				-- Push onto stack
 				mem_data_addr <= slv(SP - 2);
 				mem_data_in <= (others => '0');
-				mem_data_in <= stack_top - stack_top_1;
+				mem_data_in <= stack_top - stack_2nd;
 				mem_data_write_aux <= '1';
 				wait until falling_edge(clock);
 				mem_data_write_aux <= '0';
@@ -250,7 +250,7 @@ begin
 				-- Push onto stack
 				mem_data_addr <= slv(SP - 2);
 				mem_data_in <= (others => '0');
-				mem_data_in <= stack_top nand stack_top_1;
+				mem_data_in <= stack_top nand stack_2nd;
 				mem_data_write_aux <= '1';
 				wait until falling_edge(clock);
 				mem_data_write_aux <= '0';
@@ -269,7 +269,7 @@ begin
 				-- Push onto stack
 				mem_data_addr <= slv(SP - 2);
 				mem_data_in <= (others => '0');
-				mem_data_in <= stack_top < stack_top_1;
+				mem_data_in <= stack_top < stack_2nd;
 				mem_data_write_aux <= '1';
 				wait until falling_edge(clock);
 				mem_data_write_aux <= '0';
@@ -288,7 +288,7 @@ begin
 				-- Push onto stack
 				mem_data_addr <= slv(SP - 2);
 				mem_data_in <= (others => '0');
-				mem_data_in <= stack_top sll stack_top_1;
+				mem_data_in <= stack_top sll stack_2nd;
 				mem_data_write_aux <= '1';
 				wait until falling_edge(clock);
 				mem_data_write_aux <= '0';
@@ -307,7 +307,7 @@ begin
 				-- Push onto stack
 				mem_data_addr <= slv(SP - 2);
 				mem_data_in <= (others => '0');
-				mem_data_in <= stack_top srl stack_top_1;
+				mem_data_in <= stack_top srl stack_2nd;
 				mem_data_write_aux <= '1';
 				wait until falling_edge(clock);
 				mem_data_write_aux <= '0';
@@ -324,8 +324,8 @@ begin
 				mem_data_read_aux <= '0';
 
 				-- Update registers
-				if stack_top = stack_top_1 then
-					IP <= unsigned(stack_top_2 & stack_top_3);
+				if stack_top = stack_2nd then
+					IP <= unsigned(stack_3rd & stack_4th);
 				else
 					IP <= IP + 1;
 				end if;
@@ -339,7 +339,7 @@ begin
 				mem_data_read_aux <= '0';
 
 				-- Update registers
-				IP <= unsigned(stack_top & stack_top_1);
+				IP <= unsigned(stack_top & stack_2nd);
 				SP <= SP - 2;
 
 			when others =>
